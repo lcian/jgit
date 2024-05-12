@@ -33,6 +33,12 @@ public class CatFile implements Callable<Integer> {
         decompresser.setInput(compressedObject);
         int decompressedObjectLength = decompresser.inflate(objectBytes);
         objectBytes = Arrays.copyOfRange(objectBytes, 0, decompressedObjectLength);
+        /*
+         * An object is stored in the following format
+         * <header>\0<content>
+         * where <header> is of the form:
+         * blob|tree|commit <content_length>
+         */
         final String object = new String(objectBytes);
         final String objectType = object.split(" ", 2)[0];
         final String objectSize = object.split(" ", 2)[1].split("\0", 2)[0];
@@ -46,24 +52,14 @@ public class CatFile implements Callable<Integer> {
             switch (objectType) {
                 case "blob" -> System.out.println(objectContents);
                 case "tree" -> {
-                    final Vector<TreeEntry> entries = new Vector<TreeEntry>();
+                    /*
+                     * A tree contains a number of entries of the form:
+                     * <mode> <name>\0<hash>
+                     */
+                    final Vector<TreeEntry> entries = new Vector<>();
                     StringBuilder sb = new StringBuilder();
-                    int start = objectSize.length() + 7; // skip header
-                    int i = start;
+                    int i = 4 + 1 + objectSize.length() + 1; // skip header
                     while (i < objectBytes.length) {
-                        // we just met a null byte, the first 20 bytes here are the hash of the previous entry
-                        if (i > start) {
-                            for (int j = i; j < i + 20; j++) {
-                                sb.append(String.format("%02x", objectBytes[j]));
-                            }
-                            i += 20;
-                            entries.getLast().setHash(sb.toString());
-                            sb.setLength(0);
-                        }
-                        // last entry has just the hash
-                        if (i == objectBytes.length) {
-                            break;
-                        }
                         while ((char) objectBytes[i] != ' ') {
                             sb.append((char) objectBytes[i]);
                             i += 1;
@@ -71,6 +67,7 @@ public class CatFile implements Callable<Integer> {
                         i += 1;
                         int mode = Integer.parseInt(sb.toString());
                         sb.setLength(0);
+
                         while ((char) objectBytes[i] != '\0') {
                             sb.append((char) objectBytes[i]);
                             i += 1;
@@ -78,7 +75,15 @@ public class CatFile implements Callable<Integer> {
                         i += 1;
                         String name = sb.toString();
                         sb.setLength(0);
-                        entries.addElement(new TreeEntry(mode, name, null));
+
+                        for (int j = i; j < i + 20; j++) {
+                            sb.append(String.format("%02x", objectBytes[j]));
+                        }
+                        i += 20;
+                        String hash = sb.toString();
+                        sb.setLength(0);
+
+                        entries.addElement(new TreeEntry(mode, name, hash));
                     }
                     for (TreeEntry entry : entries) {
                         System.out.println(entry);
@@ -103,18 +108,14 @@ public class CatFile implements Callable<Integer> {
     )
     private String objectHash;
 
-    public class TreeEntry {
-        private int mode;
-        private String name;
-        private String hash;
+    public static final class TreeEntry {
+        private final int mode;
+        private final String name;
+        private final String hash;
 
         public TreeEntry(int mode, String name, String hash) {
             this.mode = mode;
             this.name = name;
-            this.hash = hash;
-        }
-
-        public void setHash(String hash) {
             this.hash = hash;
         }
 
