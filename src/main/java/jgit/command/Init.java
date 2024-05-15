@@ -1,3 +1,5 @@
+package jgit.command;
+
 import picocli.CommandLine.Command;
 
 import java.io.File;

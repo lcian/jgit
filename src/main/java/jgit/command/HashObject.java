@@ -1,16 +1,16 @@
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang3.ArrayUtils;
+package jgit.command;
+
+import jgit.GitBlob;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.concurrent.Callable;
-import java.util.zip.Deflater;
 
 
 @Command(name = "hash-object",
@@ -33,26 +33,20 @@ public class HashObject implements Callable<Integer> {
     @Override
     public Integer call() throws IOException {
         final byte[] contents = Files.readAllBytes(Path.of(filename));
-        final byte[] object = ArrayUtils.addAll(String.format("blob %d\0", new String(contents).length()).getBytes(), contents);
-        final String hash = DigestUtils.sha1Hex(object);
+        final GitBlob blob = new GitBlob(contents);
+        final String hash = blob.getHashHex();
         System.out.println(hash);
 
         if (doWrite) {
-            byte[] compressedObject = new byte[Constants.MAX_FILE_SIZE_BYTES];
-            final Deflater compresser = new Deflater();
-            compresser.setInput(object);
-            compresser.finish();
-            final int compressedObjectLength = compresser.deflate(compressedObject);
-            compressedObject = Arrays.copyOfRange(compressedObject, 0, compressedObjectLength);
-
             final String hashPrefix = hash.substring(0, 2);
             final String hashSuffix = hash.substring(2);
             if (Files.notExists(Path.of(String.format(".git/objects/%s", hashPrefix)))) {
                 new File(".git/objects", hashPrefix).mkdirs();
             }
             final String objectPath = String.format(".git/objects/%s/%s", hashPrefix, hashSuffix);
-            Files.createFile(Path.of(objectPath));
-            Files.write(Path.of(objectPath), compressedObject);
+            final FileOutputStream out = new FileOutputStream(objectPath);
+            blob.serialize(out);
+            out.close();
         }
         return 0;
     }

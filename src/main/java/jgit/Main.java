@@ -1,3 +1,8 @@
+package jgit;
+
+import jgit.command.CatFile;
+import jgit.command.HashObject;
+import jgit.command.Init;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
