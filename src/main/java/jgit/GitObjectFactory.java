@@ -18,9 +18,9 @@ public class GitObjectFactory {
             case "blob" -> GitBlob.deserializeUncompressed(uncompressedObject);
             case "tree" -> GitTree.deserializeUncompressed(uncompressedObject);
             case "commit" ->
-                    throw new NotImplementedException(String.format("Object type %s is not implemented yet"), objectType);
+                    throw new NotImplementedException(String.format("Object type %s is not implemented yet", objectType));
             case "tag" ->
-                    throw new NotImplementedException(String.format("Object type %s is not implemented yet"), objectType);
+                    throw new NotImplementedException(String.format("Object type %s is not implemented yet", objectType));
             default -> throw new RuntimeException(String.format("Unexpected object type: %s", objectType));
         };
     }
