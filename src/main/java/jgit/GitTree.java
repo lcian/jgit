@@ -93,15 +93,26 @@ public class GitTree implements GitObject {
         return DigestUtils.sha1Hex(this.getUncompressedSerialization());
     }
 
-    public String toString() {
+    public String toString(boolean recursive) {
+        return this.toString(recursive, "");
+    }
+
+    private String toString(boolean recursive, String prepend) {
         StringBuilder sb = new StringBuilder();
         for (Child child : children) {
-            sb.append(
-                    String.format("%06d %s %s\t%s",
-                            child.getMode().mode, child.getObject().getType(),
-                            child.getObject().getHashHex(), child.getName()
-                    )
-            );
+            if (recursive && child.getObject().getType() == "tree") {
+                GitTree childObject = (GitTree) child.getObject();
+                sb.append(childObject.toString(true, prepend + child.getName() + "/"));
+            } else {
+                sb.append(
+                        String.format("%06d %s %s\t%s",
+                                child.getMode().mode,
+                                child.getObject().getType(),
+                                child.getObject().getHashHex(),
+                                prepend + child.getName()
+                        )
+                );
+            }
             if (!child.equals(children.lastElement())) {
                 sb.append(String.format("%n"));
             }
@@ -109,15 +120,16 @@ public class GitTree implements GitObject {
         return sb.toString();
     }
 
+    public String toString() {
+        return this.toString(false);
+    }
+
     public byte[] getUncompressedSerialization() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         for (Child child : this.children) {
             final byte[] entry = ArrayUtils.addAll(
-                    String.format("%6d %s", child.getMode().mode, child.getName()).getBytes(),
-                    ArrayUtils.addAll(
-                            (child.equals(this.children.getLast()) ? "" : "\0").getBytes(),
-                            child.getObject().getHash()
-                    )
+                    String.format("%d %s\0", child.getMode().mode, child.getName()).getBytes(),
+                    child.getObject().getHash()
             );
             try {
                 baos.write(entry);
