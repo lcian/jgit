@@ -32,9 +32,36 @@
             <version>3.14.0</version>
         </dependency>
     </dependencies>
-
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>compile-native</id>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <target>
+                                <exec executable="gcc">
+                                    <arg value="-I"/>
+                                    <arg value="/usr/lib64/jvm/java-22-openjdk-22/include/"/>
+                                    <arg value="-I"/>
+                                    <arg value="/usr/lib64/jvm/java-22-openjdk-22/include/linux"/>
+                                    <arg value="-shared"/>
+                                    <arg value="-fPIC"/>
+                                    <arg value="src/main/native/fileutils.c"/>
+                                    <arg value="-o"/>
+                                    <arg value="target/libfileutils.so"/>
+                                </exec>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -62,7 +89,6 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
