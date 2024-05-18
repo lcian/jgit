@@ -170,7 +170,6 @@ public class GitCommit implements GitObject {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("tree %s%n", this.treeHash));
         if (this.parentHash != null) {
-            ;
             sb.append(String.format("parent %s%n", this.parentHash));
         }
         sb.append(String.format("author %s <%s> %s +0200%n", this.authorName, this.authorEmail, this.creationTimestamp.getEpochSecond()));

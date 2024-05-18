@@ -21,7 +21,7 @@ import java.util.concurrent.Callable;
 )
 public class WriteTree implements Callable<Integer> {
 
-    private GitTree createTreeRecursively(Vector<String> blobPaths, String prefix) {
+    private static GitTree createTreeRecursively(Vector<String> blobPaths, String prefix) {
         final Vector<GitTree.Child> children = new Vector<>();
         final HashMap<String, Vector<String>> indirectChildren = new HashMap<>();
         for (String path : blobPaths) {
@@ -49,13 +49,12 @@ public class WriteTree implements Callable<Integer> {
             }
         }
         for (String key : indirectChildren.keySet()) {
-            return this.createTreeRecursively(indirectChildren.get(key), key);
+            return createTreeRecursively(indirectChildren.get(key), key);
         }
         return new GitTree(children);
     }
 
-    @Override
-    public Integer call() throws IOException {
+    public static void writeTree(OutputStream out) throws IOException {
         final FileInputStream fis;
         try {
             fis = new FileInputStream(".git/index");
@@ -69,9 +68,9 @@ public class WriteTree implements Callable<Integer> {
             String blobPath = it.next();
             blobPaths.addLast(blobPath);
         }
-        final GitTree tree = this.createTreeRecursively(blobPaths, "");
+        final GitTree tree = createTreeRecursively(blobPaths, "");
         final String hash = tree.getHashHex();
-        System.out.println(hash);
+        out.write(String.format("%s%n", hash).getBytes());
         final String hashPrefix = hash.substring(0, 2);
         final String hashSuffix = hash.substring(2);
 
@@ -82,6 +81,11 @@ public class WriteTree implements Callable<Integer> {
         final FileOutputStream fos = new FileOutputStream(objectPath);
         tree.serialize(fos);
         fos.close();
+    }
+
+    @Override
+    public Integer call() throws IOException {
+        writeTree(System.out);
         return 0;
     }
 }

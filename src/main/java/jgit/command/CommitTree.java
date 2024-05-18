@@ -37,15 +37,14 @@ public class CommitTree implements Callable<Integer> {
     )
     private String message;
 
-    @Override
-    public Integer call() throws IOException {
+    public static void CommitTree(String treeHash, String parentCommitHash, String message) throws IOException {
         final GitCommit commit = new GitCommit(
-                this.parentCommitHash,
-                this.treeHash,
+                parentCommitHash,
+                treeHash,
                 "Lorenzo Cian",
                 "cian.lorenzo@gmail.com",
                 Instant.now(),
-                this.message
+                message
         );
 
         final String hash = commit.getHashHex();
@@ -59,6 +58,11 @@ public class CommitTree implements Callable<Integer> {
         final String objectPath = String.format(".git/objects/%s/%s", hashPrefix, hashSuffix);
         commit.serialize(new FileOutputStream(objectPath));
         Files.write(Path.of(".git/refs/heads/master"), hash.getBytes());
+    }
+
+    @Override
+    public Integer call() throws IOException {
+        CommitTree(this.treeHash, this.parentCommitHash, this.message);
         return 0;
     }
 

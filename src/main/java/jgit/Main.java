@@ -11,7 +11,7 @@ import java.util.concurrent.Callable;
         description = "jgit version 1.0.0",
         subcommands = {
                 CatFile.class, HashObject.class, LsTree.class, WriteTree.class, CommitTree.class,
-                Init.class, Log.class
+                Init.class, Add.class, Commit.class, Log.class
         }
 )
 public class Main implements Callable<Integer> {
