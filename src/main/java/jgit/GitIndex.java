@@ -52,7 +52,8 @@ public class GitIndex {
         int i = 12; // skip signature, version, number of entries
         while ((i < bytes.length) && entries.size() < numEntries) {
             int j = i + 62; // 62 = size of an entry except for variable relpath
-            while (!((bytes[j] == (byte) '\0') && (j % 8 == 0))) { // reach end of padded relpath
+            int base = i;
+            while (!((bytes[j] == (byte) '\0') && ((j - base + 1) % 8 == 0))) { // reach end of padded relpath
                 j++;
             }
             int new_i = j + 1; // where the actual new entry starts

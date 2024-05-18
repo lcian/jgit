@@ -32,7 +32,6 @@ public class WriteTree implements Callable<Integer> {
                 }
                 indirectChildren.get(pathPrefix).addLast(path);
             } else {
-                System.out.printf("Processing path %s%n", path);
                 final HashObject hasher = new HashObject(path, true);
                 final ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 try {
@@ -64,13 +63,11 @@ public class WriteTree implements Callable<Integer> {
             throw new RuntimeException(e);
         }
         final GitIndex index = GitIndex.deserialize(fis);
-        System.out.println(index.toString());
 
         final Vector<String> blobPaths = new Vector<>();
         for (Iterator<String> it = index.getObjectRelativePaths(); it.hasNext(); ) {
             String blobPath = it.next();
             blobPaths.addLast(blobPath);
-            System.out.format("Blob path %s%n", blobPath);
         }
         final GitTree tree = this.createTreeRecursively(blobPaths, "");
         final String hash = tree.getHashHex();

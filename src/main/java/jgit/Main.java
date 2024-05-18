@@ -10,7 +10,8 @@ import java.util.concurrent.Callable;
 @Command(name = "jgit",
         description = "jgit version 1.0.0",
         subcommands = {
-                Init.class, CatFile.class, HashObject.class, LsTree.class, WriteTree.class, CommitTree.class
+                CatFile.class, HashObject.class, LsTree.class, WriteTree.class, CommitTree.class,
+                Init.class, Log.class
         }
 )
 public class Main implements Callable<Integer> {

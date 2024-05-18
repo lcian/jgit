@@ -1,10 +1,8 @@
 package jgit.command;
 
-import jgit.Common;
 import jgit.GitCommit;
 import picocli.CommandLine;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -59,10 +57,7 @@ public class CommitTree implements Callable<Integer> {
             new File(".git/objects", hashPrefix).mkdirs();
         }
         final String objectPath = String.format(".git/objects/%s/%s", hashPrefix, hashSuffix);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        commit.serialize(baos);
-        byte[] serialized = baos.toByteArray();
-        Common.deflate(serialized, new FileOutputStream(objectPath));
+        commit.serialize(new FileOutputStream(objectPath));
         Files.write(Path.of(".git/refs/heads/master"), hash.getBytes());
         return 0;
     }

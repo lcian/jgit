@@ -48,7 +48,7 @@ public class CatFile implements Callable<Integer> {
         } else if (showFlag.s) {
             System.out.println(object.getSize());
         } else if (showFlag.p) {
-            System.out.println(object);
+            System.out.print(object);
         }
         return 0;
     }
