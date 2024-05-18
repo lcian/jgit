@@ -39,26 +39,38 @@ public class GitIndex {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        final String signature = new String(Arrays.copyOfRange(bytes, 4, 8));
+        final String signature = new String(Arrays.copyOfRange(bytes, 0, 4));
         if (!signature.equals(SIGNATURE)) {
             throw new RuntimeException(String.format("Unexpected signature: %s", signature));
         }
-        final int version = Ints.fromByteArray(Arrays.copyOfRange(bytes, 0, 4));
+        final int version = Ints.fromByteArray(Arrays.copyOfRange(bytes, 4, 8));
         if (version != VERSION) {
             throw new UnsupportedOperationException(String.format("Version %d is not supported", version));
         }
+        final int numEntries = Ints.fromByteArray(Arrays.copyOfRange(bytes, 8, 12));
         final SortedSet<Entry> entries = new TreeSet<Entry>(Entry.relativePathComparator);
-        int i = 8;
-        int j = 8;
-        while (i < bytes.length) {
-            while (bytes[j] != (byte) '\0') {
+        int i = 12; // skip signature, version, number of entries
+        while ((i < bytes.length) && entries.size() < numEntries) {
+            int j = i + 62; // 62 = size of an entry except for variable relpath
+            while (!((bytes[j] == (byte) '\0') && (j % 8 == 0))) { // reach end of padded relpath
                 j++;
             }
-            j++;
-            entries.add(Entry.deserialize(new ByteArrayInputStream(Arrays.copyOfRange(bytes, i, j))));
-            i = j + 1;
+            int new_i = j + 1; // where the actual new entry starts
+            while (bytes[j] == (byte) '\0') { // ignore padding zeros
+                j--;
+            }
+            entries.add(Entry.deserialize(new ByteArrayInputStream(ArrayUtils.add(Arrays.copyOfRange(bytes, i, j + 1), (byte) '\0'))));
+            i = new_i;
         }
         return new GitIndex(entries);
+    }
+
+    public Iterator<String> getObjectRelativePaths() {
+        Vector<String> relpaths = new Vector<>();
+        for (Entry entry : entries) {
+            relpaths.addLast(entry.relativePath);
+        }
+        return relpaths.iterator();
     }
 
     private void add(Entry entry) {
@@ -87,6 +99,17 @@ public class GitIndex {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append(String.format("GitIndex{%n"));
+        for (final Entry entry : this.entries) {
+            sb.append(String.format("%s%n", entry.toString()));
+        }
+        sb.append('}');
+        return sb.toString();
     }
 
     private static class Entry {
@@ -136,8 +159,10 @@ public class GitIndex {
             short flags;
             String relativePath;
             try {
-                creationTime = FileTime.fromMillis(Longs.fromByteArray(in.readNBytes(8)));
-                modifiedTime = FileTime.fromMillis(Longs.fromByteArray(in.readNBytes(8)));
+                creationTime =
+                        FileTime.fromMillis(Longs.fromByteArray(in.readNBytes(8)));
+                modifiedTime =
+                        FileTime.fromMillis(Longs.fromByteArray(in.readNBytes(8)));
                 deviceId = Ints.fromByteArray(in.readNBytes(4));
                 inode = Ints.fromByteArray(in.readNBytes(4));
                 mode = Ints.fromByteArray(in.readNBytes(4));
@@ -229,10 +254,10 @@ public class GitIndex {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder();
+            final StringBuilder sb = new StringBuilder();
             sb.append("Entry{");
-            sb.append(String.format("creationTime=%d, ", creationTime));
-            sb.append(String.format("modifiedTime=%d, ", modifiedTime));
+            sb.append(String.format("creationTime=%s, ", creationTime.toString()));
+            sb.append(String.format("modifiedTime=%s, ", modifiedTime.toString()));
             sb.append(String.format("deviceId=%d, ", deviceId));
             sb.append(String.format("inode=%d, ", inode));
             sb.append(String.format("mode=%d, ", mode));

@@ -19,12 +19,13 @@ public class Init implements Callable<Integer> {
         final File root = new File(".git");
         new File(root, "objects").mkdirs();
         new File(root, "refs").mkdirs();
+        new File(root, "refs/heads").mkdirs();
         final File head = new File(root, "HEAD");
         head.createNewFile();
         FileWriter writer = new FileWriter(head);
         writer.write("ref: refs/heads/master\n");
         writer.close();
-        System.out.printf("Initialized empty Git repository in %s%n", Paths.get("").toAbsolutePath());
+        System.out.printf("Initialized empty Git repository in %s/.git%n", Paths.get("").toAbsolutePath());
         return 0;
     }
 }

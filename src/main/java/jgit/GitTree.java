@@ -5,21 +5,23 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Vector;
+import java.util.*;
 
 public class GitTree implements GitObject {
 
-    private Vector<Child> children;
+    private SortedSet<Child> children;
 
     public GitTree() {
-        this.children = new Vector<>();
+        this.children = new TreeSet<>(Child.nameComparator);
     }
 
-    public GitTree(Collection<Child> treeChildren, Collection<GitBlob> blobChildren) {
+    public GitTree(Collection<Child> children) {
         this();
         this.children.addAll(children);
+    }
+
+    public void addChild(Child child) {
+        this.children.add(child);
     }
 
     public static GitTree deserializeUncompressed(byte[] in) {
@@ -67,10 +69,6 @@ public class GitTree implements GitObject {
         return tree;
     }
 
-    public Collection<GitTree> getChildren() {
-        return (Collection<GitTree>) this.children.clone();
-    }
-
     public String getType() {
         return "tree";
     }
@@ -113,7 +111,7 @@ public class GitTree implements GitObject {
                         )
                 );
             }
-            if (!child.equals(children.lastElement())) {
+            if (!child.equals(children.getLast())) {
                 sb.append(String.format("%n"));
             }
         }
@@ -167,6 +165,8 @@ public class GitTree implements GitObject {
     }
 
     public static class Child {
+
+        private static final Comparator<Child> nameComparator = Comparator.comparing(Child::getName);
 
         private GitObject object;
         private Mode mode;

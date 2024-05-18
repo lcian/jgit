@@ -31,6 +31,9 @@ public class HashObject implements Callable<Integer> {
     )
     private boolean doWrite;
 
+    public HashObject() {
+    }
+
     public HashObject(String filename, boolean doWrite) {
         this.filename = filename;
         this.doWrite = doWrite;
