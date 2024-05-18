@@ -31,6 +31,11 @@
             <artifactId>commons-lang3</artifactId>
             <version>3.14.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.2.0-jre</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -53,6 +58,7 @@
                                     <arg value="src/main/native/fileutils.c"/>
                                     <arg value="-o"/>
                                     <arg value="target/libfileutils.so"/>
+                                    <arg value="-Wno-discarded-qualifiers"/>
                                 </exec>
                             </target>
                         </configuration>

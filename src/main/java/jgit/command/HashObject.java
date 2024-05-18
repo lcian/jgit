@@ -8,6 +8,7 @@ import picocli.CommandLine.Parameters;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
@@ -18,11 +19,6 @@ import java.util.concurrent.Callable;
 )
 public class HashObject implements Callable<Integer> {
 
-    @CommandLine.Option(names = "-w",
-            description = "Add the object to the database"
-    )
-    boolean doWrite;
-
     @Parameters(
             arity = "1",
             description = "Filename of the object",
@@ -30,24 +26,40 @@ public class HashObject implements Callable<Integer> {
     )
     private String filename;
 
-    @Override
-    public Integer call() throws IOException {
-        final byte[] contents = Files.readAllBytes(Path.of(filename));
+    @CommandLine.Option(names = "-w",
+            description = "Add the object to the database"
+    )
+    private boolean doWrite;
+
+    public HashObject(String filename, boolean doWrite) {
+        this.filename = filename;
+        this.doWrite = doWrite;
+    }
+
+    public Integer call(OutputStream out) throws IOException {
+        final byte[] contents = Files.readAllBytes(Path.of(this.filename));
         final GitBlob blob = new GitBlob(contents);
         final String hash = blob.getHashHex();
-        System.out.println(hash);
+        out.write(hash.getBytes());
 
-        if (doWrite) {
+        if (this.doWrite) {
             final String hashPrefix = hash.substring(0, 2);
             final String hashSuffix = hash.substring(2);
             if (Files.notExists(Path.of(String.format(".git/objects/%s", hashPrefix)))) {
                 new File(".git/objects", hashPrefix).mkdirs();
             }
             final String objectPath = String.format(".git/objects/%s/%s", hashPrefix, hashSuffix);
-            final FileOutputStream out = new FileOutputStream(objectPath);
-            blob.serialize(out);
-            out.close();
+            final FileOutputStream fos = new FileOutputStream(objectPath);
+            blob.serialize(fos);
+            fos.close();
         }
         return 0;
+    }
+
+    @Override
+    public Integer call() throws IOException {
+        final int res = this.call(System.out);
+        System.out.println();
+        return res;
     }
 }
